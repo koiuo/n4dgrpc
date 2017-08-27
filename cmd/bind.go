@@ -34,8 +34,13 @@ var (
 
 var bindCmd = &cobra.Command{
 	Use:   "bind NAME [NAMESPACE]",
-	Short: "bind name in namespace",
-	Long: "bind name in namespace",
+	Short: "bind NAME in NAMESPACE",
+	Long: `bind NAME in NAMESPACE
+
+By default command exits with zero if binding is negative.
+
+To fail if binding is negative flag -f must be set.
+	`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.RangeArgs(1, 2)(cmd, args); err != nil {
 			return err
