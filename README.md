@@ -1,5 +1,19 @@
-# n4dgrpc
-query namerd via io.l5d.mesh interface
+```
+      ||  ||  ||\
+  .===||  ||  ||===.
+      ||  ||  ||    \              /        |             
+  .===||  ||  ||===._\     ,.——.  /  |   ,--|   ,--,  ,.-- ,--.   ,--
+      ||  ||  ||    \      |   |  ---|  |   |  |   |  |    |   | |
+  .===||  ||  ||===._\     '   '     '   '--'   '--|  |    |--'   '--
+   \  ||  ||  || |  \                             /        |
+    \__\   \   \ |___\                             
+        \   \   \|
+```
+
+command-line utility to query [namerd](https://github.com/linkerd/linkerd) via
+`io.l5d.mesh` interface
+
+[![Build Status](https://travis-ci.org/edio/n4dgrpc.svg?branch=master)](https://travis-ci.org/edio/n4dgrpc)
 
 ## Usage
 
