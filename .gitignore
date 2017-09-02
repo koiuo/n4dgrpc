@@ -1,5 +1,6 @@
 .idea
 n4dgrpc.iml
-# binary
-main
-coverage.*
+# artifacts
+/n4dgrpc
+/main
+/coverage.*
