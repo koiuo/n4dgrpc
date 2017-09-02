@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/edio/n4dgrpc.svg?branch=master)](https://travis-ci.org/edio/n4dgrpc)
+
 ```
       ||  ||  ||\
   .===||  ||  ||===.
@@ -11,19 +13,40 @@
 ```
 
 command-line utility to query [namerd](https://github.com/linkerd/linkerd) via
-`io.l5d.mesh` interface
+`io.l5d.mesh` interface.
 
-[![Build Status](https://travis-ci.org/edio/n4dgrpc.svg?branch=master)](https://travis-ci.org/edio/n4dgrpc)
+## What is it for?
+
+Think of it as _curl_ for `io.l5d.mesh`.
+
+_namerd_ can expose `io.l5d.thriftNameInterpreter`, `io.l5d.mesh` and
+`io.l5d.httpController` interface. It is easy (and often convenient) to check name
+resolution in _namerd_ via its `io.l5d.httpController` with _curl_
+
+```
+$ curl 'localhost:4380/api/1/resolve/galaxyquest?path=/svc/myservice'
+```
+
+However, if `io.l5d.httpController` is not enabled, one has to go to admin ui to
+check, whether name can be resolved.
+
+_n4dgrpc_ sends resolve or bind requests to _namerd_  via `io.l5d.mesh`
+interface.
+
+It also can be used as a lightweight yet meaningful (as opposed to dumb tcp
+handshake) health-check for _namerd_.
 
 ## Usage
 
 ```
-$ n4dgrpc -a namerd:4321 -t 500ms bind /service/consul /prodnamespace
+$ n4dgrpc -a localhost:4321 resolve /$/inet/github.com/80 /galaxyquest
+192.30.253.113:80
+192.30.253.112:80
 ```
 
 Help is there too
 ```
-$ ./n4dgrpc help                                                                                                  [master] 
+$ ./n4dgrpc help
 n4dgrpc is a CLI application that serves as a client for namerd mesh interface
 
 Usage:
@@ -48,7 +71,7 @@ Use "n4dgrpc [command] --help" for more information about a command.
 
 ## Build & install
 
-For building `go` is requird. `GOPATH` environment variable must be set.
+`go` is required to build _n4dgrpc_. `GOPATH` environment variable must be set.
 
 ### From sources using GNU make
 
