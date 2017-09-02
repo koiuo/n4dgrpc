@@ -1,6 +1,5 @@
 language: go
 go:
   - 1.8.x
-  - master
-install: make
-script: go test -v ./...
+install: make test-deps
+script: make test
