@@ -28,6 +28,7 @@ type ExitCode uint8
 const (
 	// Error during parsing input data, validation, etc.
 	ExitBindingError = ExitCode(2)
+	ExitEmptyReplica = ExitCode(3)
 	ExitUnexpectedError = ExitCode(127)
 )
 
@@ -48,13 +49,15 @@ var (
 var N4dgrpc = &cobra.Command{
 	Use:   "n4dgrpc",
 	Short: "grpc client for namerd",
-	Long: `n4dgrpc is a CLI application for invoking various operations on
-	 namerd via its mesh interface.`,
+	Long: "n4dgrpc is a CLI application that serves as a client for namerd mesh interface",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		client.OpTimeout = n4dgrpcConfig.Timeout
 		if err := client.Connect(n4dgrpcConfig.Address); err != nil {
 			Exit(ExitUnexpectedError, "Connection error: %v", err)
 		}
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		client.Close()
 	},
 }
 
@@ -66,11 +69,13 @@ func Execute() {
 
 func init() {
 	N4dgrpc.PersistentFlags().StringVarP(&n4dgrpcConfig.Address, "address", "a", os.Getenv("N4DGRPC_ADDRESS"),
-		`address of namerd grpc interface as host:port.
-		If N4DGRPC_ADDRESS environment variable is specified, its value is used by default.`)
+			`address of namerd grpc interface as host:port
+	If N4DGRPC_ADDRESS environment variable is set, it is used as default
+	value for this flag`)
 	N4dgrpc.PersistentFlags().DurationVarP(&n4dgrpcConfig.Timeout, "timeout", "t", time.Second,
-		`wait no longer than specified time for command to complete.
-		Some commands involve multiple calls to namerd. This flag sets global time limit.`)
+			`timeout for command
+	Some commands involve multiple calls to namerd. This flag sets global
+	time limit`)
 }
 
 func Exit(code ExitCode, msg string, args ...interface{}) {

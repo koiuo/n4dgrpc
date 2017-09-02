@@ -24,6 +24,8 @@ import (
 	"time"
 	"fmt"
 	"log"
+	"io"
+	"github.com/edio/n4dgrpc/convertions"
 )
 
 // exported
@@ -37,6 +39,8 @@ var (
 // private
 var (
 	connection *grpc.ClientConn
+	resolver mesh.ResolverClient
+	interpreter mesh.InterpreterClient
 	ctx = context.Background()
 )
 
@@ -45,7 +49,18 @@ func Connect(namerdAddress string) (err error) {
 	lctx, cancel := context.WithTimeout(ctx, DialTimeout)
 	defer cancel()
 	connection, err = grpc.DialContext(lctx, namerdAddress, grpc.WithInsecure())
+	resolver = mesh.NewResolverClient(connection)
+	interpreter = mesh.NewInterpreterClient(connection)
 	return
+}
+
+func Close() {
+	if connection != nil {
+		connection.Close()
+		connection = nil
+		resolver = nil
+		resolver = nil
+	}
 }
 
 // Bind a name in a namespace specified by root
@@ -61,18 +76,17 @@ func bind(ctx context.Context, root *mesh.Path, name *mesh.Path) ([]*mesh.Path, 
 		Name: name,
 	}
 
-	interpreter := mesh.NewInterpreterClient(connection)
 	resp, err := interpreter.GetBoundTree(ctx, bindReq)
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO support not only leafs
 	switch resp.Tree.Node.(type) {
 	case *mesh.BoundNameTree_Leaf_:
 		return []*mesh.Path{resp.Tree.GetLeaf().Id}, nil
-	case *mesh.BoundNameTree_Empty_:
 	case *mesh.BoundNameTree_Neg_:
-		return []*mesh.Path{}, nil
+		return []*mesh.Path{}, &ErrNegBinding{Name: convertions.PathToStr(name)}
 	default:
 		return nil, fmt.Errorf("Not supported yet: %v", resp)
 	}
@@ -86,17 +100,17 @@ func Resolve(root *mesh.Path, name *mesh.Path) ([]*mesh.Endpoint, error) {
 
 	boundPaths, err := bind(lctx, root, name)
 	if (err != nil || len(boundPaths) == 0) {
-		return nil, fmt.Errorf("Not bound: %v", err)
+		return nil, err
 	}
 
 	var endpoints []*mesh.Endpoint
 	for _, path := range boundPaths {
 		// TODO return typed errors to distinguish downstream
-		e, err := resolve(lctx, path)
+		endpnts, err := resolve(lctx, path)
 		if err != nil {
 			log.Printf("Error resolving [%v]: %v", path, err)
 		}
-		endpoints = append(endpoints, e...)
+		endpoints = append(endpoints, endpnts...)
 	}
 
 	return endpoints, nil
@@ -107,17 +121,29 @@ func resolve(ctx context.Context, boundPath *mesh.Path) ([]*mesh.Endpoint, error
 		Id: boundPath,
 	}
 
-	resolver := mesh.NewResolverClient(connection)
-	resp, err := resolver.GetReplicas(ctx, replicasReq)
+	stream, err := resolver.StreamReplicas(ctx, replicasReq)
 	if err != nil {
 		return nil, err
 	}
+	defer stream.CloseSend()
 
-	// TODO handle pending
-	endpoints := []*mesh.Endpoint{}
-	if resp.GetBound() != nil{
-		endpoints = resp.GetBound().Endpoints
+	return recvEndpoints(stream)
+}
+
+func recvEndpoints(stream mesh.Resolver_StreamReplicasClient) (endpoints []*mesh.Endpoint, err error) {
+	for endpoints == nil && err == nil {
+		replicas, e := stream.Recv()
+		if replicas != nil && replicas.GetBound() != nil {
+			endpoints = replicas.GetBound().Endpoints
+		}
+		if e != nil {
+			err = e
+		}
 	}
-	return endpoints, nil
+	if endpoints != nil && err == io.EOF {
+		// do not treat EOF as error if endpoints received
+		err = nil
+	}
+	return endpoints, err
 }
 

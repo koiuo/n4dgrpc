@@ -16,33 +16,96 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	mesh "github.com/linkerd/linkerd/mesh/core/src/main/protobuf"
 	"github.com/edio/n4dgrpc/client"
 	"fmt"
 	"github.com/edio/n4dgrpc/convertions"
 )
 
+type ResolveConfig struct {
+	FailOnNegBinding bool
+	FailOnEmptyReplica bool
+	Root             *mesh.Path
+	Name             *mesh.Path
+}
+
+var (
+	resolveConfig = ResolveConfig{}
+)
+
 var resolveCmd = &cobra.Command{
 	Use:   "resolve PATH [NAMESPACE]",
-	Short: "resolve path to replica set in namespace",
-	Long: "resolve path to replica set in namespace",
-	Args: bindCmd.Args, // just copy from bind for now. TODO think of proper sharing later
+	Short: "resolve PATH to replica set in NAMESPACE",
+	Long: `resolve PATH to replica set in NAMESPACE
+
+This command invokes 2 operations on namerd: binding and then resolving the
+bound name.
+
+See https://linkerd.io/advanced/routing/ for details.
+
+By default command exits with zero even if binding is negative or resolved
+replica set is empty. See options to change this behavior.
+`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if err := cobra.RangeArgs(1, 2)(cmd, args); err != nil {
+			return err
+		}
+
+		{
+			var name *mesh.Path
+			var err error
+			if name, err = convertions.StrToPath(args[0]); err != nil {
+				return fmt.Errorf("NAME: %v", err)
+			}
+			resolveConfig.Name = name
+		}
+
+		{
+			rootStr := DefaultRoot
+			if len(args) == 2 {
+				rootStr = args[1]
+			}
+
+			var root *mesh.Path
+			var err error
+			if root, err = convertions.StrToPath(rootStr); err != nil {
+				return fmt.Errorf("ROOT: %v", err)
+			}
+			resolveConfig.Root = root
+		}
+
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO error handling
-		endpoints, err := client.Resolve(bindConfig.Root, bindConfig.Name)
+		endpoints, err := client.Resolve(resolveConfig.Root, resolveConfig.Name)
 		if err != nil {
-			Exit(ExitBindingError, "Failed to resolve: %v", err)
+			switch err.(type) {
+			case *client.ErrNegBinding:
+				if resolveConfig.FailOnNegBinding {
+					Exit(ExitBindingError, "%v", err)
+				}
+				break
+			default:
+				Exit(ExitUnexpectedError, "%v", err)
+			}
 		}
-		if len(endpoints) == 0 {
-			Exit(ExitBindingError, "No replicas resolved")
+
+		if len(endpoints) == 0 && resolveConfig.FailOnEmptyReplica {
+			Exit(ExitEmptyReplica, "%v", err)
 		}
+
 		for _, endpoint := range endpoints {
 			str, _ := convertions.EndpointToStr(endpoint)
 			fmt.Println(str)
 		}
+
 		return
 	},
 }
 
 func init() {
 	N4dgrpc.AddCommand(resolveCmd)
+	resolveCmd.Flags().BoolVarP(&resolveConfig.FailOnNegBinding, "fail-neg", "f", false, "fail if binding is negative")
+	resolveCmd.Flags().BoolVarP(&resolveConfig.FailOnEmptyReplica, "fail-empty", "F", false, "fail if replica set is empty")
 }

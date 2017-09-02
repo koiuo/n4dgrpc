@@ -23,9 +23,9 @@ import (
 )
 
 type BindConfig struct {
-	FailOnNegOrEmpty bool
-	Root             *mesh.Path
-	Name             *mesh.Path
+	FailOnNeg bool
+	Root      *mesh.Path
+	Name      *mesh.Path
 }
 
 var (
@@ -37,9 +37,8 @@ var bindCmd = &cobra.Command{
 	Short: "bind NAME in NAMESPACE",
 	Long: `bind NAME in NAMESPACE
 
-By default command exits with zero if binding is negative.
-
-To fail if binding is negative flag -f must be set.
+By default command exits with zero even if binding is negative. See options to
+change this behavior.
 	`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.RangeArgs(1, 2)(cmd, args); err != nil {
@@ -74,10 +73,15 @@ To fail if binding is negative flag -f must be set.
 	Run: func(cmd *cobra.Command, args []string) {
 		paths, err := client.Bind(bindConfig.Root, bindConfig.Name)
 		if err != nil {
-			Exit(ExitBindingError, "Failed to bind: %v", err)
-		}
-		if len(paths) == 0 && bindConfig.FailOnNegOrEmpty {
-			Exit(ExitBindingError, "Binding is negative or empty")
+			switch err.(type) {
+			case *client.ErrNegBinding:
+				if bindConfig.FailOnNeg {
+					Exit(ExitBindingError, "%v", err)
+				}
+				break
+			default:
+				Exit(ExitUnexpectedError, "%v", err)
+			}
 		}
 
 		for _, path := range paths {
@@ -89,5 +93,5 @@ To fail if binding is negative flag -f must be set.
 
 func init() {
 	N4dgrpc.AddCommand(bindCmd)
-	bindCmd.Flags().BoolVarP(&bindConfig.FailOnNegOrEmpty, "fail", "f", false, "fail if binding is negative")
+	bindCmd.Flags().BoolVarP(&bindConfig.FailOnNeg, "fail", "f", false, "fail if binding is negative")
 }
