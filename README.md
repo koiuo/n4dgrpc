@@ -9,26 +9,27 @@ $ n4dgrpc -a namerd:4321 -t 500ms bind /service/consul /prodnamespace
 
 Help is there too
 ```
-$ n4dgrpc --help
-  n4dgrpc is a CLI application for invoking various operations on
-           namerd via its mesh interface.
-  
-  Usage:
-    n4dgrpc [command]
-  
-  Available Commands:
-    bind        bind name in namespace
-    help        Help about any command
-    resolve     resolve path to replica set in namespace
-  
-  Flags:
-    -a, --address string     address of namerd grpc interface as host:port.
-                  If N4DGRPC_ADDRESS environment variable is specified, its value is used by default.
-    -h, --help               help for n4dgrpc
-    -t, --timeout duration   wait no longer than specified time for command to complete.
-                  Some commands involve multiple calls to namerd. This flag sets global time limit. (default 1s)
-  
-  Use "n4dgrpc [command] --help" for more information about a command.
+$ ./n4dgrpc help                                                                                                  [master] 
+n4dgrpc is a CLI application that serves as a client for namerd mesh interface
+
+Usage:
+  n4dgrpc [command]
+
+Available Commands:
+  bind        bind NAME in NAMESPACE
+  help        Help about any command
+  resolve     resolve PATH to replica set in NAMESPACE
+
+Flags:
+  -a, --address string     address of namerd grpc interface as host:port
+        If N4DGRPC_ADDRESS environment variable is set, it is used as default
+        value for this flag (default "localhost:4321")
+  -h, --help               help for n4dgrpc
+  -t, --timeout duration   timeout for command
+        Some commands involve multiple calls to namerd. This flag sets global
+        time limit (default 1s)
+
+Use "n4dgrpc [command] --help" for more information about a command.
 ```
 
 ## Build & install
@@ -52,9 +53,9 @@ files, because there are only protos. We then have to use protobuf compiler to g
 
 After that tool code can be built in a usual way.
 
-## Issues
+## Known issues
 
-Tool doesn't send HTTP/2 `GOAWAY` frame (https://github.com/grpc/grpc-go/issues/460). If you use namerd pre 1.1.3 you'll
+1. Tool doesn't send HTTP/2 `GOAWAY` frame (https://github.com/grpc/grpc-go/issues/460). If you use namerd pre 1.1.3 you'll
 see scary stacktrace in its logs on every request.
 
-`resolve` command is not yet fully done. It is unstable, unpredictable and many other "_un*_"s are there.
+2. Namerd doesn't allow closing gRPC stream channel, `resolve` command causes exception in namerd.
