@@ -4,3 +4,4 @@ n4dgrpc.iml
 /n4dgrpc
 /main
 /coverage.*
+/.protoc

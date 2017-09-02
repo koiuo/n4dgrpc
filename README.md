@@ -34,28 +34,46 @@ Use "n4dgrpc [command] --help" for more information about a command.
 
 ## Build & install
 
-### TL;DR
+For building `go` is requird. `GOPATH` environment variable must be set.
+
+### From sources using GNU make
+
+For convenience `Makefile` is provided. Building should not require any
+intervention. Make script will fetch fresh copy of gRPC service definitions
+from _linkerd_ repo, download protobuf compiler, compile gRPC stubs and finally
+build an executable binary as `./n4dgrpc`
 
 ```
+$ make
+```
+
+### Using go get/install
+
+Tool relies on _linkerd_ gRPC service definitions.
+
+Not only manual compilation of gRPC stubs is required, but they also should be
+fetched from the _linkerd_ repo. Thus installation with single `go get` command
+is not possible.
+
+```
+$ # Fetch gRPC service definitions.
+$ # This command should fail with 'no buildable sources' error. This is normal
 $ go get github.com/linkerd/linkerd/mesh/core/src/main/protobuf
 $ export l5dproto="$GOPATH/src/github.com/linkerd/linkerd/mesh/core/src/main/protobuf"
-$ protoc -I "$l5dproto" "$l5dproto/*.proto" --go_out=plugins=grpc:"$l5dproto"
+$ ./protoc -I "$l5dproto" "$l5dproto/*.proto" --go_out=plugins=grpc:"$l5dproto"
+```
+
+Only after this go get/install will succeed
+
+```
 $ go install github.com/edio/n4dgrpc
 ```
 
-### Explanation
-
-Tool relies on linkerd protobuf definitions (here'n after just _protos_). Instead of vendoring I decided to fetch those
-protos from linkerd repo.
-
-So `go get` will fetch protos from the linkerd repo into `$GOPATH`, but it'll complain that there are no buildable go
-files, because there are only protos. We then have to use protobuf compiler to generate go API from protos.
-
-After that tool code can be built in a usual way.
-
 ## Known issues
 
-1. Tool doesn't send HTTP/2 `GOAWAY` frame (https://github.com/grpc/grpc-go/issues/460). If you use namerd pre 1.1.3 you'll
-see scary stacktrace in its logs on every request.
+1. Tool doesn't send HTTP/2 `GOAWAY` frame
+(https://github.com/grpc/grpc-go/issues/460). Thus every operation will cause
+an exception logged for _namerd_ < 1.1.3.
 
-2. Namerd doesn't allow closing gRPC stream channel, `resolve` command causes exception in namerd.
+2. _namerd_ doesn't allow closing gRPC stream channel, `resolve` will causes
+exception logged in namerd.
