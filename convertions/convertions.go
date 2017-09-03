@@ -16,9 +16,9 @@ package convertions
 
 import (
 	"errors"
+	"fmt"
 	mesh "github.com/linkerd/linkerd/mesh/core/src/main/protobuf"
 	"strings"
-	"fmt"
 	//"encoding/hex"
 	"encoding/hex"
 )
@@ -79,7 +79,7 @@ func toIPv6TCP(ip []byte, port int) (string, error) {
 	segments := make([]string, 8)
 
 	for i := 0; i < 8; i++ {
-		segments[i] = hex.EncodeToString(ip[i*2:i*2+2])
+		segments[i] = hex.EncodeToString(ip[i*2 : i*2+2])
 	}
 
 	return fmt.Sprintf("[%s]:%d", strings.Join(segments, ":"), port), nil

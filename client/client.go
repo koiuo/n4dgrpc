@@ -19,13 +19,13 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"github.com/edio/n4dgrpc/convertions"
 	mesh "github.com/linkerd/linkerd/mesh/core/src/main/protobuf"
 	"google.golang.org/grpc"
-	"time"
-	"fmt"
-	"log"
 	"io"
-	"github.com/edio/n4dgrpc/convertions"
+	"log"
+	"time"
 )
 
 // exported
@@ -38,10 +38,10 @@ var (
 
 // private
 var (
-	connection *grpc.ClientConn
-	resolver mesh.ResolverClient
+	connection  *grpc.ClientConn
+	resolver    mesh.ResolverClient
 	interpreter mesh.InterpreterClient
-	ctx = context.Background()
+	ctx         = context.Background()
 )
 
 // Connect to n4d
@@ -99,7 +99,7 @@ func Resolve(root *mesh.Path, name *mesh.Path) ([]*mesh.Endpoint, error) {
 	defer cancel()
 
 	boundPaths, err := bind(lctx, root, name)
-	if (err != nil || len(boundPaths) == 0) {
+	if err != nil || len(boundPaths) == 0 {
 		return nil, err
 	}
 
@@ -146,4 +146,3 @@ func recvEndpoints(stream mesh.Resolver_StreamReplicasClient) (endpoints []*mesh
 	}
 	return endpoints, err
 }
-

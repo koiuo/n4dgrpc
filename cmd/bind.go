@@ -15,11 +15,11 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/edio/n4dgrpc/convertions"
 	"fmt"
-	mesh "github.com/linkerd/linkerd/mesh/core/src/main/protobuf"
 	"github.com/edio/n4dgrpc/client"
+	"github.com/edio/n4dgrpc/convertions"
+	mesh "github.com/linkerd/linkerd/mesh/core/src/main/protobuf"
+	"github.com/spf13/cobra"
 )
 
 type BindConfig struct {

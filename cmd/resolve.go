@@ -15,18 +15,18 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	mesh "github.com/linkerd/linkerd/mesh/core/src/main/protobuf"
-	"github.com/edio/n4dgrpc/client"
 	"fmt"
+	"github.com/edio/n4dgrpc/client"
 	"github.com/edio/n4dgrpc/convertions"
+	mesh "github.com/linkerd/linkerd/mesh/core/src/main/protobuf"
+	"github.com/spf13/cobra"
 )
 
 type ResolveConfig struct {
-	FailOnNegBinding bool
+	FailOnNegBinding   bool
 	FailOnEmptyReplica bool
-	Root             *mesh.Path
-	Name             *mesh.Path
+	Root               *mesh.Path
+	Name               *mesh.Path
 }
 
 var (

@@ -15,16 +15,16 @@
 package client
 
 import (
-	"github.com/stretchr/testify/assert"
-	"testing"
+	"context"
+	"fmt"
 	n4d "github.com/edio/n4dgrpc/client/mock"
+	"github.com/edio/n4dgrpc/convertions"
 	"github.com/golang/mock/gomock"
 	mesh "github.com/linkerd/linkerd/mesh/core/src/main/protobuf"
-	"github.com/edio/n4dgrpc/convertions"
-	"log"
-	"fmt"
-	"context"
+	"github.com/stretchr/testify/assert"
 	"io"
+	"log"
+	"testing"
 )
 
 // should return [path],nil if leaf is bound
@@ -237,7 +237,7 @@ func neg() *mesh.BoundTreeRsp {
 	}
 }
 
-func replicas(endpoints... *mesh.Endpoint) *mesh.Replicas {
+func replicas(endpoints ...*mesh.Endpoint) *mesh.Replicas {
 	return &mesh.Replicas{
 		Result: &mesh.Replicas_Bound_{
 			Bound: &mesh.Replicas_Bound{
@@ -250,10 +250,10 @@ func replicas(endpoints... *mesh.Endpoint) *mesh.Replicas {
 // Create Endpoint with specified addresses
 func endpoint(ip4 []byte, port int) *mesh.Endpoint {
 	return &mesh.Endpoint{
-		Port: 80,
+		Port:    80,
 		Address: ip4,
-		InetAf: mesh.Endpoint_INET4,
-		Meta: &mesh.Endpoint_Meta{NodeName:"whatever"},
+		InetAf:  mesh.Endpoint_INET4,
+		Meta:    &mesh.Endpoint_Meta{NodeName: "whatever"},
 	}
 }
 
