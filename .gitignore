@@ -5,3 +5,4 @@ n4dgrpc.iml
 /main
 /coverage.*
 /.protoc
+/release
