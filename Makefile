@@ -1,7 +1,7 @@
+IMPORTPATH=github.com/edio/n4dgrpc
 L5D_PROTOS_REPO=github.com/linkerd/linkerd/mesh/core/src/main/protobuf
 PROTOS=$(GOPATH)/src/${L5D_PROTOS_REPO}
 GRPC_STUBS=$(patsubst %.proto,%.pb.go,${PROTOS}/*.proto)
-DOCKERTAG=m1w
 BINARY=n4dgrpc
 VERSION=$(shell git describe 2>/dev/null || echo "0.0.0")
 RELEASE=release
@@ -22,12 +22,12 @@ release-dir:
 
 ${RELEASE}/%-${VERSION}.tar.gz: | release-dir
 	GOOS=$(shell echo $* | cut -d '-' -f 2) GOARCH=$(shell echo $* | cut -d '-' -f 3) \
-	go build -ldflags="-s -w" -o ${RELEASE}/${BINARY}
+	go build -ldflags="-s -w -X ${IMPORTPATH}/cmd.version=${VERSION}" -o ${RELEASE}/${BINARY}
 	tar -C ${RELEASE} -czf $@ ${BINARY}
 	rm ${RELEASE}/${BINARY}
 
 ${BINARY}:
-	go build -o $@
+	go build -ldflags="-s -w -X ${IMPORTPATH}/cmd.version=${VERSION}" -o $@
 
 ${PROTOS}/%.pb.go: ${PROTOS}
 	go get -u github.com/golang/protobuf/protoc-gen-go
