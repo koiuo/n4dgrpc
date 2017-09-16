@@ -113,16 +113,20 @@ func Resolve(root *mesh.Path, name *mesh.Path, resolveFn ResolutionStrategy) ([]
 
 	var endpoints []*mesh.Endpoint
 	// TODO concurrent resolution
+	// TODO or stop resolution as soon as something is resolved. Provide --all option to resolve all
+	// TODO clarify default linkerd behavior. Ask on linkerd slack?
 	for _, path := range boundPaths {
-		// TODO return typed errors to distinguish downstream
-		endpnts, err := resolveFn(lctx, path)
-		if err != nil {
-			log.Printf("Error resolving [%v]: %v", path, err)
+		endpnts, errLast := resolveFn(lctx, path)
+		if errLast != nil {
+			log.Printf("Error resolving [%v]: %v", path, errLast)
 		}
 		endpoints = append(endpoints, endpnts...)
+		err = errLast
 	}
 
-	return endpoints, nil
+	// right now last resolution error is returned. But multiple bound trees are rare at least for me, ok so far
+	// TODO collect all errors
+	return endpoints, err
 }
 
 func resolveStream(ctx context.Context, boundPath *mesh.Path) ([]*mesh.Endpoint, error) {

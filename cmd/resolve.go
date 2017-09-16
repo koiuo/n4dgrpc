@@ -25,8 +25,11 @@ import (
 type ResolveConfig struct {
 	FailOnNegBinding   bool
 	FailOnEmptyReplica bool
+	NoStream           bool
+	StreamOnly         bool
 	Root               *mesh.Path
 	Name               *mesh.Path
+	ResolutionStrategy client.ResolutionStrategy
 }
 
 var (
@@ -74,11 +77,23 @@ replica set is empty. See options to change this behavior.
 			resolveConfig.Root = root
 		}
 
+		if resolveConfig.NoStream && resolveConfig.StreamOnly {
+			return fmt.Errorf("--no-stream and --stream-only are mutually exclusive")
+		}
+
+		if resolveConfig.NoStream {
+			resolveConfig.ResolutionStrategy = client.ResolutionStrategyNoStream
+		} else if resolveConfig.StreamOnly {
+			resolveConfig.ResolutionStrategy = client.ResolutionStrategyStreamOnly
+		} else {
+			resolveConfig.ResolutionStrategy = client.ResolutionStrategySmart
+		}
+
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO error handling
-		endpoints, err := client.Resolve(resolveConfig.Root, resolveConfig.Name, client.ResolutionStrategySmart)
+		endpoints, err := client.Resolve(resolveConfig.Root, resolveConfig.Name, resolveConfig.ResolutionStrategy)
 		if err != nil {
 			switch err.(type) {
 			case *client.ErrNegBinding:
@@ -108,4 +123,6 @@ func init() {
 	N4dgrpc.AddCommand(resolveCmd)
 	resolveCmd.Flags().BoolVarP(&resolveConfig.FailOnNegBinding, "fail-neg", "f", false, "fail if binding is negative")
 	resolveCmd.Flags().BoolVarP(&resolveConfig.FailOnEmptyReplica, "fail-empty", "F", false, "fail if replica set is empty")
+	resolveCmd.Flags().BoolVar(&resolveConfig.StreamOnly, "stream-only", false, "use only streaming for resolution")
+	resolveCmd.Flags().BoolVar(&resolveConfig.NoStream, "no-stream", false, "do not use streaming for resolution")
 }
