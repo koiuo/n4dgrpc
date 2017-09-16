@@ -16,10 +16,20 @@ package client
 
 import "fmt"
 
+// Indicates that a Name can't be bound to Path
 type ErrNegBinding struct {
 	Name string
 }
 
 func (e *ErrNegBinding) Error() string {
 	return fmt.Sprint("Neg:", e.Name)
+}
+
+// Indicates that a Path resolution is still pending
+type ErrResolutionPending struct {
+	Path string
+}
+
+func (e *ErrResolutionPending) Error() string {
+	return fmt.Sprint("Pending:", e.Path)
 }

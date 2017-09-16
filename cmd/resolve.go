@@ -78,7 +78,7 @@ replica set is empty. See options to change this behavior.
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO error handling
-		endpoints, err := client.Resolve(resolveConfig.Root, resolveConfig.Name)
+		endpoints, err := client.Resolve(resolveConfig.Root, resolveConfig.Name, client.ResolutionStrategySmart)
 		if err != nil {
 			switch err.(type) {
 			case *client.ErrNegBinding:

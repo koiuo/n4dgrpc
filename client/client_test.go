@@ -114,7 +114,7 @@ func Test_resolve_noStreamError(t *testing.T) {
 	resolver = resolverMock
 
 	// when
-	paths, err := resolve(context.Background(), path("/$/inet/google.com/53"))
+	paths, err := resolveStream(context.Background(), path("/$/inet/google.com/53"))
 
 	// then
 	assert.Error(t, err)
@@ -144,7 +144,7 @@ func Test_resolve_bound(t *testing.T) {
 	resolver = resolverMock
 
 	// when
-	endpoints, err := resolve(context.Background(), path("/$/inet/google.dns/53"))
+	endpoints, err := resolveStream(context.Background(), path("/$/inet/google.dns/53"))
 
 	// then
 	assert.NoError(t, err)
@@ -176,7 +176,7 @@ func Test_resolve_bound_and_EOF(t *testing.T) {
 	resolver = resolverMock
 
 	// when
-	endpoints, err := resolve(context.Background(), path("/$/inet/google.dns/53"))
+	endpoints, err := resolveStream(context.Background(), path("/$/inet/google.dns/53"))
 
 	// then
 	assert.NoError(t, err)
@@ -205,7 +205,7 @@ func Test_resolve_nil_and_EOF(t *testing.T) {
 	resolver = resolverMock
 
 	// when
-	endpoints, err := resolve(context.Background(), path("/$/inet/google.dns/53"))
+	endpoints, err := resolveStream(context.Background(), path("/$/inet/google.dns/53"))
 
 	// then
 	assert.Error(t, err)

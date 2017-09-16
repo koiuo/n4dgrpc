@@ -36,6 +36,14 @@ var (
 	OpTimeout time.Duration = 1 * time.Second
 )
 
+type ResolutionStrategy func(ctx context.Context, boundPath *mesh.Path) ([]*mesh.Endpoint, error)
+
+var (
+	ResolutionStrategySmart      ResolutionStrategy = resolveGetThenStream
+	ResolutionStrategyNoStream   ResolutionStrategy = resolveGet
+	ResolutionStrategyStreamOnly ResolutionStrategy = resolveStream
+)
+
 // private
 var (
 	connection  *grpc.ClientConn
@@ -94,7 +102,7 @@ func bind(ctx context.Context, root *mesh.Path, name *mesh.Path) ([]*mesh.Path, 
 }
 
 // Resolve a name in a namespace specified by root
-func Resolve(root *mesh.Path, name *mesh.Path) ([]*mesh.Endpoint, error) {
+func Resolve(root *mesh.Path, name *mesh.Path, resolveFn ResolutionStrategy) ([]*mesh.Endpoint, error) {
 	lctx, cancel := context.WithTimeout(ctx, OpTimeout)
 	defer cancel()
 
@@ -104,9 +112,10 @@ func Resolve(root *mesh.Path, name *mesh.Path) ([]*mesh.Endpoint, error) {
 	}
 
 	var endpoints []*mesh.Endpoint
+	// TODO concurrent resolution
 	for _, path := range boundPaths {
 		// TODO return typed errors to distinguish downstream
-		endpnts, err := resolve(lctx, path)
+		endpnts, err := resolveFn(lctx, path)
 		if err != nil {
 			log.Printf("Error resolving [%v]: %v", path, err)
 		}
@@ -116,7 +125,7 @@ func Resolve(root *mesh.Path, name *mesh.Path) ([]*mesh.Endpoint, error) {
 	return endpoints, nil
 }
 
-func resolve(ctx context.Context, boundPath *mesh.Path) ([]*mesh.Endpoint, error) {
+func resolveStream(ctx context.Context, boundPath *mesh.Path) ([]*mesh.Endpoint, error) {
 	replicasReq := &mesh.ReplicasReq{
 		Id: boundPath,
 	}
@@ -144,5 +153,40 @@ func recvEndpoints(stream mesh.Resolver_StreamReplicasClient) (endpoints []*mesh
 		// do not treat EOF as error if endpoints received
 		err = nil
 	}
+	return endpoints, err
+}
+
+func resolveGet(ctx context.Context, boundPath *mesh.Path) ([]*mesh.Endpoint, error) {
+	replicasReq := &mesh.ReplicasReq{
+		Id: boundPath,
+	}
+
+	resp, err := resolver.GetReplicas(ctx, replicasReq)
+	if err != nil {
+		return nil, err
+	}
+
+	endpoints := []*mesh.Endpoint{}
+	if resp.GetBound() != nil {
+		endpoints = resp.GetBound().Endpoints
+		err = nil
+	} else if resp.GetPending() != nil {
+		err = &ErrResolutionPending{Path: convertions.PathToStr(boundPath)}
+	} else {
+		err = fmt.Errorf("Not supported: %v", resp.GetResult())
+	}
+	return endpoints, err
+}
+
+func resolveGetThenStream(ctx context.Context, boundPath *mesh.Path) ([]*mesh.Endpoint, error) {
+	endpoints, err := resolveGet(ctx, boundPath)
+	switch err.(type) {
+	case *ErrResolutionPending:
+		endpoints, err = resolveStream(ctx, boundPath)
+		break
+	default:
+		break
+	}
+
 	return endpoints, err
 }
