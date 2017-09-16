@@ -46,8 +46,17 @@ bound name.
 
 See https://linkerd.io/advanced/routing/ for details.
 
+For resolution n4dgrpc tries to use GetReplicas gRPC method first, however if
+underlying resolver fails to resolve the Path quickly, method will return
+Pending result.
+
+If this is the case, then n4dgrpc falls back to StreamReplicas gRPC method,
+requests a stream and waits for the first available update.
+
+This behavior may be overridden by supplying --stream-only or --no-stream flag.
+
 By default command exits with zero even if binding is negative or resolved
-replica set is empty. See options to change this behavior.
+replica set is empty or pending. Flags -f and -F change this behavior.
 `,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.RangeArgs(1, 2)(cmd, args); err != nil {
