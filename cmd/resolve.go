@@ -35,8 +35,8 @@ var (
 
 var resolveCmd = &cobra.Command{
 	Use:   "resolve PATH [NAMESPACE]",
-	Short: "resolve PATH to replica set in NAMESPACE",
-	Long: `resolve PATH to replica set in NAMESPACE
+	Short: "Resolve PATH to replica set in NAMESPACE",
+	Long: `Resolve PATH to replica set in NAMESPACE
 
 This command invokes 2 operations on namerd: binding and then resolving the
 bound name.

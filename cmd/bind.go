@@ -34,8 +34,8 @@ var (
 
 var bindCmd = &cobra.Command{
 	Use:   "bind NAME [NAMESPACE]",
-	Short: "bind NAME in NAMESPACE",
-	Long: `bind NAME in NAMESPACE
+	Short: "Bind NAME in NAMESPACE",
+	Long: `Bind NAME in NAMESPACE
 
 By default command exits with zero even if binding is negative. See options to
 change this behavior.
